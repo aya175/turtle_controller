@@ -1,35 +1,3 @@
-#!/usr/bin/env python3
-"""
-controller_node.py
-
-Task 7.1 - Your First Robot Control
-
-Single ROS2 node that:
-  1. Reads keyboard input (WASD / Arrow keys) and publishes velocity
-     commands to drive turtlesim's turtle under NON-HOLONOMIC
-     constraints: only linear.x (forward/backward along the turtle's
-     own heading) and angular.z (rotation about its own center) are
-     ever published. linear.y is never touched -> the turtle can
-     never strafe sideways, exactly like a car or differential-drive
-     robot.
-  2. Subscribes to the turtle's color sensor topic, computes the
-     dominant ("major") color channel (Red, Green or Blue) of the
-     background the turtle is currently over, logs it, and
-     republishes it on a custom topic.
-
-Bonus features implemented:
-  - use_stamped_vel (bool param): dynamically switch between
-    geometry_msgs/Twist and geometry_msgs/TwistStamped (with a real
-    header timestamp from the node's clock).
-  - global_teleop (bool param): if True, uses pynput to capture
-    keystrokes system-wide (terminal does not need to be focused).
-    If False (default), uses classic raw-terminal reading, which
-    DOES require the terminal window to be the active/focused
-    window.
-
-Author: Aya
-"""
-
 import sys
 import threading
 import termios
@@ -42,10 +10,7 @@ from geometry_msgs.msg import Twist, TwistStamped
 from turtlesim.msg import Color
 from std_msgs.msg import String
 
-
-# ---------------------------------------------------------------------------
 # key -> (linear.x multiplier, angular.z multiplier)
-# ---------------------------------------------------------------------------
 MOVE_BINDINGS = {
     'w': (1.0, 0.0),
     's': (-1.0, 0.0),
@@ -63,16 +28,14 @@ class TurtleControllerNode(Node):
     def __init__(self):
         super().__init__('turtle_controller_node')
 
-        # ------------------------------------------------------------
-        # Requirement 4: Parameters (never hardcode topic names)
-        # ------------------------------------------------------------
+        # Parameters
         self.declare_parameter('cmd_vel_topic', '/turtle1/cmd_vel')
         self.declare_parameter('color_sensor_topic', '/turtle1/color_sensor')
         self.declare_parameter('dominant_color_topic', '/dominant_color')
         self.declare_parameter('linear_speed', 2.0)
         self.declare_parameter('angular_speed', 2.0)
-        self.declare_parameter('use_stamped_vel', False)   # Bonus 2
-        self.declare_parameter('global_teleop', False)     # Bonus 3
+        self.declare_parameter('use_stamped_vel', False) 
+        self.declare_parameter('global_teleop', False)
 
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').value
         self.color_topic = self.get_parameter('color_sensor_topic').value
@@ -82,16 +45,12 @@ class TurtleControllerNode(Node):
         self.use_stamped_vel = self.get_parameter('use_stamped_vel').value
         self.global_teleop = self.get_parameter('global_teleop').value
 
-        # ------------------------------------------------------------
         # Publishers
-        # ------------------------------------------------------------
         msg_type = TwistStamped if self.use_stamped_vel else Twist
         self.cmd_vel_pub = self.create_publisher(msg_type, self.cmd_vel_topic, 10)
         self.dominant_color_pub = self.create_publisher(String, self.dominant_topic, 10)
 
-        # ------------------------------------------------------------
-        # Requirement 3: Perception subscriber
-        # ------------------------------------------------------------
+        # Perception subscriber
         self.color_sub = self.create_subscription(
             Color, self.color_topic, self.color_callback, 10)
 
@@ -104,9 +63,7 @@ class TurtleControllerNode(Node):
             f"  global_teleop        = {self.global_teleop}"
         )
 
-        # ------------------------------------------------------------
         # Start the appropriate keyboard-reading thread
-        # ------------------------------------------------------------
         self._stop_flag = False
         if self.global_teleop:
             self._start_global_listener()
@@ -115,9 +72,7 @@ class TurtleControllerNode(Node):
                 target=self._terminal_teleop_loop, daemon=True)
             self._teleop_thread.start()
 
-    # ------------------------------------------------------------
-    # Requirement 3 callback: compute + log + publish dominant color
-    # ------------------------------------------------------------
+    # callback: compute + log + publish dominant color
     def color_callback(self, msg: Color):
         channels = {'Red': msg.r, 'Green': msg.g, 'Blue': msg.b}
         major_color = max(channels, key=channels.get)
@@ -132,10 +87,8 @@ class TurtleControllerNode(Node):
         out.data = major_color
         self.dominant_color_pub.publish(out)
 
-    # ------------------------------------------------------------
-    # Requirement 2: publish movement command (non-holonomic:
+    # publish movement command (non-holonomic:
     # only linear.x and angular.z are ever set)
-    # ------------------------------------------------------------
     def publish_cmd(self, linear_x: float, angular_z: float):
         if self.use_stamped_vel:
             msg = TwistStamped()
@@ -149,9 +102,7 @@ class TurtleControllerNode(Node):
             msg.angular.z = angular_z
         self.cmd_vel_pub.publish(msg)
 
-    # ------------------------------------------------------------
-    # Default teleop: raw terminal reading (requires terminal focus)
-    # ------------------------------------------------------------
+    # Default teleop: raw terminal reading
     def _get_key(self, settings):
         tty.setraw(sys.stdin.fileno())
         key = sys.stdin.read(1)
@@ -188,9 +139,7 @@ class TurtleControllerNode(Node):
         finally:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
 
-    # ------------------------------------------------------------
-    # Bonus 3: global teleop using pynput (works without terminal focus)
-    # ------------------------------------------------------------
+    # global teleop using pynput
     def _start_global_listener(self):
         try:
             from pynput import keyboard
