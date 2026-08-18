@@ -1,7 +1,5 @@
 # turtle_controller
 
-**MIA Robotics — Electrical Training 2026/27 — Task 7.1: Your First Robot Control**
-
 A ROS2 (Jazzy) package that provides a single node combining keyboard teleoperation
 and color-sensor perception for `turtlesim`.
 
