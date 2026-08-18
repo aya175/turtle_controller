@@ -1,15 +1,3 @@
-"""
-turtle_launch.py
-
-Requirement 5: launches turtlesim_node + our controller node together.
-Bonus 1: every parameter (ours AND turtlesim_node's) is exposed as a
-launch argument, so nothing needs to be edited in code -- e.g.:
-
-    ros2 launch turtle_controller turtle_launch.py \
-        background_r:=255 background_g:=0 background_b:=0 \
-        use_stamped_vel:=true global_teleop:=true
-"""
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
@@ -17,12 +5,11 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    # ---- turtlesim_node's own params, exposed for override (Bonus 1) ----
     background_r_arg = DeclareLaunchArgument('background_r', default_value='69')
     background_g_arg = DeclareLaunchArgument('background_g', default_value='86')
     background_b_arg = DeclareLaunchArgument('background_b', default_value='255')
 
-    # ---- our controller node's params, exposed for override ----
+    # controller node's params, exposed for override
     cmd_vel_topic_arg = DeclareLaunchArgument(
         'cmd_vel_topic', default_value='/turtle1/cmd_vel')
     color_topic_arg = DeclareLaunchArgument(
